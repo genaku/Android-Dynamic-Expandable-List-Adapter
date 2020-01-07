@@ -24,10 +24,8 @@ public class SampleActivityForJava extends AppCompatActivity {
 
         final MyAdapter myAdapter = new MyAdapter(list);
 
-
         myAdapter.setExpanded(true);
 
         recyclerView.setAdapter(myAdapter);
-
     }
 }

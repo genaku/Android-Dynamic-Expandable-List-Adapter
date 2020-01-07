@@ -1,5 +1,6 @@
 package mobin.expandablerecyclerview.adapters
 
+import android.annotation.SuppressLint
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -18,18 +19,26 @@ import kotlinx.coroutines.launch
  * @param ExpandedType Child Type (This can be a subtype of Any object)
  * @author Mobin Munir
  */
-abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType : ExpandableRecyclerViewAdapter.ExpandableGroup<ExpandedType>, PVH : ExpandableRecyclerViewAdapter.ExpandableViewHolder, CVH : ExpandableRecyclerViewAdapter.ExpandedViewHolder>
+abstract class ExpandableRecyclerViewAdapter<
+        ExpandedType : Any,
+        ExpandableType : ExpandableRecyclerViewAdapter.ExpandableGroup<ExpandedType>,
+        PVH : ExpandableRecyclerViewAdapter.ExpandableViewHolder,
+        CVH : ExpandableRecyclerViewAdapter.ExpandedViewHolder>
 
 /**
  *  Initializes the adapter with a list of expandable groups and a direction of inflation.
- *  @param mExpandableList The list of expandable groups.
+ *  @param expandableList The list of expandable groups.
  *  @param expandingDirection An enum for direction.
  */
-    (
-    private val mExpandableList: ArrayList<ExpandableType>,
-    private val expandingDirection: ExpandingDirection
+(
+        private val expandableList: ArrayList<ExpandableType>,
+        expandingDirection: ExpandingDirection
 ) : RecyclerView.Adapter<PVH>() {
 
+    private val layoutManagerOrientation: Int = if (expandingDirection == ExpandingDirection.VERTICAL)
+        LinearLayoutManager.VERTICAL
+    else
+        LinearLayoutManager.HORIZONTAL
 
     /**
      * A bit to maintain expansion state over entire listing.
@@ -51,12 +60,12 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
     /**
      * A reference to the recycler view that this adapter is currently attached to.
      */
-    private var mParentRecyclerView: RecyclerView? = null
+    private var parentRecyclerView: RecyclerView? = null
 
     /**
      * A tag for logging.
      */
-    private val mTAG = "ExpandableGroupAdapter"
+    private val TAG = "ExpandableGroupAdapter"
 
     /**
      * An enum class holds constant for expansion directions.
@@ -66,31 +75,19 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
         VERTICAL
     }
 
-
+    @SuppressLint("WrongConstant")
     private fun initializeChildRecyclerView(childRecyclerView: RecyclerView?) {
-
-        if (childRecyclerView != null) {
-
-            val linearLayoutManager = LinearLayoutManager(childRecyclerView.context)
-
-            linearLayoutManager.orientation = if (expandingDirection == ExpandingDirection.VERTICAL)
-                LinearLayoutManager.VERTICAL
-            else LinearLayoutManager.HORIZONTAL
-
-            childRecyclerView.layoutManager = linearLayoutManager
-
+        childRecyclerView?.run {
+            layoutManager = LinearLayoutManager(context).apply {
+                orientation = layoutManagerOrientation
+            }
         }
     }
 
+    override fun getItemCount(): Int = expandableList.size
 
-    override fun getItemCount(): Int {
-        return mExpandableList.size
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PVH {
-        return onCreateParentView(parent, viewType)
-    }
-
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PVH =
+            onCreateParentView(parent, viewType)
 
     private fun onCreateParentView(parent: ViewGroup, viewType: Int): PVH {
         val pvh = onCreateParentViewHolder(parent, viewType)
@@ -99,7 +96,7 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
 
         pvh.containerView.setOnClickListener {
             val position = pvh.adapterPosition
-            val expandable = mExpandableList[position]
+            val expandable = expandableList[position]
 
             if (isSingleExpanded())
                 handleSingleExpansion(position)
@@ -109,7 +106,7 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
 
             onExpandableClick(pvh, expandable)
 
-            Log.d(mTAG, "Clicked @ $position")
+            Log.d(TAG, "Clicked @ $position")
         }
         return pvh
     }
@@ -123,11 +120,13 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
     }
 
     private fun collapseAllExcept(position: Int) {
-        val expandableGroup = mExpandableList[position]
+        val expandableGroup = expandableList[position]
         reverseExpandableState(expandableGroup)
+
         notifyItemChanged(position)
+
         if (lastExpandedPosition > -1 && lastExpandedPosition != position) {
-            val previousExpandableGroup = mExpandableList[lastExpandedPosition]
+            val previousExpandableGroup = expandableList[lastExpandedPosition]
             if (previousExpandableGroup.isExpanded) {
                 previousExpandableGroup.isExpanded = false
                 notifyItemChanged(lastExpandedPosition)
@@ -135,7 +134,6 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
         }
 
         lastExpandedPosition = position
-
     }
 
     private fun handleSingleExpansion(position: Int) {
@@ -143,38 +141,27 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
             collapseAllGroups()
         } else {
             collapseAllExcept(position)
-
         }
-
-
     }
 
     private fun handleExpansion(expandableGroup: ExpandableType, position: Int) {
         reverseExpandableState(expandableGroup)
         notifyItemChanged(position)
-
-
     }
 
     private fun handleLastPositionScroll(position: Int) {
-        if (position == mExpandableList.lastIndex)
-            mParentRecyclerView?.smoothScrollToPosition(position)
+        if (position == expandableList.lastIndex)
+            parentRecyclerView?.smoothScrollToPosition(position)
     }
-
 
     override fun onBindViewHolder(holder: PVH, position: Int) {
         setupChildRecyclerView(holder, position)
-
     }
 
     private fun setupChildRecyclerView(holder: PVH, position: Int) {
-        val expandableGroup = mExpandableList[position]
-        val childListAdapter = ChildListAdapter(
-            expandableGroup
-            , holder, position
-        ) { viewGroup, viewType ->
+        val expandableGroup = expandableList[position]
+        val childListAdapter = ChildListAdapter(expandableGroup, holder) { viewGroup, viewType ->
             onCreateChildViewHolder(viewGroup, viewType)
-
         }
         val childRecyclerView = holder.containerView.getRecyclerView()
 
@@ -183,34 +170,24 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
 
         clickEvent(expandableGroup, holder.containerView)
 
-
         onBindParentViewHolder(holder, expandableGroup, position)
     }
 
     private fun clickEvent(expandableGroup: ExpandableType, containerView: View) {
-        val childRecyclerView = containerView.getRecyclerView()
-
-        childRecyclerView?.visibility = if (expandableGroup.isExpanded)
-            View.VISIBLE
-        else View.GONE
-
+        containerView.getRecyclerView()?.visibility = if (expandableGroup.isExpanded) View.VISIBLE else View.GONE
     }
 
-
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-
         adapterAttached = true
+        parentRecyclerView = recyclerView
+        parentRecyclerView?.layoutManager = LinearLayoutManager(recyclerView.context)
 
-        mParentRecyclerView = recyclerView
-
-        mParentRecyclerView?.layoutManager = LinearLayoutManager(recyclerView.context)
-
-        Log.d(mTAG, "Attached: $adapterAttached")
+        Log.d(TAG, "Attached: $adapterAttached")
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         adapterAttached = false
-        this.mParentRecyclerView = null
+        this.parentRecyclerView = null
     }
 
     /**
@@ -220,7 +197,7 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      */
     fun setExpanded(expanded: Boolean) {
         this.expanded = expanded
-        mExpandableList.applyExpansionState(expanded)
+        expandableList.applyExpansionState(expanded)
     }
 
     /**
@@ -230,33 +207,26 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      * @param position An optional current position at which to insert the new group in the adapter. (not applicable by default).
      */
     fun addGroup(expandableGroup: ExpandableType, expanded: Boolean = false, position: Int = -1) {
-
-
         var atPosition = itemCount
 
         if (position > atPosition) {
-            Log.e(mTAG, "Position to add group exceeds the total group count of $atPosition")
+            Log.e(TAG, "Position to add group exceeds the total group count of $atPosition")
             return
         }
 
-
         expandableGroup.isExpanded = expanded
 
-
-
         if (position == -1 || position == atPosition)
-            mExpandableList.add(expandableGroup)
+            expandableList.add(expandableGroup)
         else if (position > -1) {
-            mExpandableList.add(position, expandableGroup)
+            expandableList.add(position, expandableGroup)
             atPosition = position
         }
 
         if (adapterAttached)
             notifyItemInserted(atPosition)
 
-        Log.d(mTAG, "Group added at $atPosition")
-
-
+        Log.d(TAG, "Group added at $atPosition")
     }
 
     /**
@@ -264,19 +234,17 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      * @param position The current position of the group the adapter.
      */
     fun removeGroup(position: Int) {
-
         if (position < 0 || position > itemCount) {
-            Log.e(mTAG, "Group can't be removed at position $position")
+            Log.e(TAG, "Group can't be removed at position $position")
             return
         }
 
-        mExpandableList.removeAt(position)
+        expandableList.removeAt(position)
 
         if (adapterAttached)
             notifyItemRemoved(position)
 
-        Log.d(mTAG, "Group removed at $position")
-
+        Log.d(TAG, "Group removed at $position")
     }
 
     /**
@@ -286,12 +254,9 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      * This method can be made public to work on subset of @see ExpandableGroup Class by declaring it outside this class
      */
     private fun List<ExpandableType>.applyExpansionState(expansionState: Boolean) {
-
         GlobalScope.launch(Dispatchers.IO) {
             forEach {
                 it.isExpanded = expansionState
-
-
             }
 
             launch(Dispatchers.Main) {
@@ -299,7 +264,6 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
                     notifyItemRangeChanged(0, itemCount)
             }
         }
-
     }
 
     /**
@@ -312,57 +276,50 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
                 if (it is RecyclerView) {
                     return it
                 }
-
             }
         }
-        Log.e(mTAG, "Recycler View for expanded items not found in parent layout.")
+        Log.e(TAG, "Recycler View for expanded items not found in parent layout.")
         return null
     }
 
     private inner class ChildListAdapter(
-        private val expandableGroup: ExpandableType,
-        private val parentViewHolder: PVH,
-        private val position: Int,
-        private val onChildRowCreated: (ViewGroup, Int) -> CVH
-    ) :
-        RecyclerView.Adapter<CVH>() {
+            private val expandableGroup: ExpandableType,
+            private val parentViewHolder: PVH,
+            private val onChildRowCreated: (ViewGroup, Int) -> CVH
+    ) : RecyclerView.Adapter<CVH>() {
 
-        private val mExpandedList = expandableGroup.getExpandingItems()
+        private val expandedList = expandableGroup.getExpandingItems()
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CVH {
-            val cvh = onChildRowCreated(parent, viewType)
-            cvh.containerView.setOnClickListener {
-                val position = cvh.adapterPosition
-                val expandedType = mExpandedList[position]
+            val childViewHolder = onChildRowCreated(parent, viewType)
+            childViewHolder.containerView.setOnClickListener {
+                val position = childViewHolder.adapterPosition
+                val expandedType = expandedList[position]
                 onExpandedClick(
-                    parentViewHolder,
-                    cvh,
-                    expandedType,
-                    expandableGroup
+                        parentViewHolder,
+                        childViewHolder,
+                        expandedType,
+                        expandableGroup
                 )
             }
-            return cvh
+            return childViewHolder
         }
 
-        override fun getItemCount(): Int {
-            return mExpandedList.size
-        }
+        override fun getItemCount(): Int = expandedList.size
 
         override fun onBindViewHolder(holder: CVH, position: Int) {
-            val expanded = mExpandedList[position]
+            val expanded = expandedList[position]
             onBindChildViewHolder(holder, expanded, expandableGroup, position)
         }
-
     }
 
     abstract class ExpandableViewHolder(override val containerView: View) :
-        RecyclerView.ViewHolder(containerView),
-        LayoutContainer
+            RecyclerView.ViewHolder(containerView),
+            LayoutContainer
 
     abstract class ExpandedViewHolder(override val containerView: View) :
-        RecyclerView.ViewHolder(containerView),
-        LayoutContainer
-
+            RecyclerView.ViewHolder(containerView),
+            LayoutContainer
 
     abstract class ExpandableGroup<out E> {
         /**
@@ -376,22 +333,21 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
         var isExpanded = false
     }
 
-
     abstract fun onCreateParentViewHolder(parent: ViewGroup, viewType: Int): PVH
 
     abstract fun onBindParentViewHolder(
-        parentViewHolder: PVH,
-        expandableType: ExpandableType,
-        position: Int
+            parentViewHolder: PVH,
+            expandableType: ExpandableType,
+            position: Int
     )
 
     abstract fun onCreateChildViewHolder(child: ViewGroup, viewType: Int): CVH
 
     abstract fun onBindChildViewHolder(
-        childViewHolder: CVH,
-        expandedType: ExpandedType,
-        expandableType: ExpandableType,
-        position: Int
+            childViewHolder: CVH,
+            expandedType: ExpandedType,
+            expandableType: ExpandableType,
+            position: Int
     )
 
     /**
@@ -400,8 +356,8 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      * @param expandableType The expandable item.
      */
     abstract fun onExpandableClick(
-        expandableViewHolder: PVH,
-        expandableType: ExpandableType
+            expandableViewHolder: PVH,
+            expandableType: ExpandableType
     )
 
     /**
@@ -412,10 +368,10 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      *@param expandableType The expandable item.
      */
     abstract fun onExpandedClick(
-        expandableViewHolder: PVH,
-        expandedViewHolder: CVH,
-        expandedType: ExpandedType,
-        expandableType: ExpandableType
+            expandableViewHolder: PVH,
+            expandedViewHolder: CVH,
+            expandedType: ExpandedType,
+            expandableType: ExpandableType
     )
 
     /**
@@ -424,6 +380,5 @@ abstract class ExpandableRecyclerViewAdapter<ExpandedType : Any, ExpandableType 
      * returns false by default.
      */
     protected open fun isSingleExpanded() = false
-
 }
 

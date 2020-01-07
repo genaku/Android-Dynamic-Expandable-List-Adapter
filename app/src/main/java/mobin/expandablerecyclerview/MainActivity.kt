@@ -19,8 +19,5 @@ class MainActivity : AppCompatActivity() {
         rvM.adapter = adapter
 
         adapter.setExpanded(false)
-
-
-
     }
 }

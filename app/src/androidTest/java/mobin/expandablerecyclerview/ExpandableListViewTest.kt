@@ -36,7 +36,7 @@ class ExpandableListViewTest {
     fun testExpandableListClick() {
         val randomIndex = Random.nextInt(10)
         onView(withId(R.id.rvM)).perform(
-            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.PViewHolder>(
+            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.ParentViewHolder>(
                 randomIndex,
                 click()
             )
@@ -55,14 +55,14 @@ class ExpandableListViewTest {
 
 
         onView(withId(R.id.rvM)).perform(
-            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.PViewHolder>(
+            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.ParentViewHolder>(
                 randomIndex,
                 click()
             )
         )
 
         onView(withId(R.id.rvM)).perform(
-            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.PViewHolder>(
+            RecyclerViewActions.actionOnItemAtPosition<MyAdapter.ParentViewHolder>(
                 randomIndex,
                 clickActionOnChildRecyclerView(randomIndex)
             )
