@@ -39,7 +39,6 @@ class MyAdapter(parents: ArrayList<Parent>) : ExpandableRecyclerViewAdapter<Chil
         childViewHolder.tvC.text = expandedType.name
     }
 
-
     override fun onExpandedClick(
             expandableViewHolder: ParentViewHolder,
             expandedViewHolder: ChildViewHolder,

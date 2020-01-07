@@ -1,12 +1,13 @@
 package mobin.expandablerecyclerview
 
 import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.forEach
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.BoundedMatcher
-import mobin.expandablerecyclerview.adapters.getRecyclerView
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 
@@ -26,10 +27,8 @@ object TestUtils {
                 uiController,
                 rvChild?.findViewHolderForAdapterPosition(index)?.itemView
             )
-
         }
     }
-
 
     fun atPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
         return object : BoundedMatcher<View, RecyclerView>(RecyclerView::class.java) {
@@ -64,5 +63,16 @@ object TestUtils {
                 return itemMatcher.matches(viewHolder.itemView)
             }
         }
+    }
+
+    fun View.getRecyclerView(): RecyclerView? {
+        if (this is ViewGroup && childCount > 0) {
+            forEach {
+                if (it is RecyclerView) {
+                    return it
+                }
+            }
+        }
+        return null
     }
 }

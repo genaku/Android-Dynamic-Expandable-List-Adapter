@@ -12,12 +12,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val list = ArrayList<Parent>(10)
-        for (i in 0..9)
-            list.add(Parent("Parent $i"))
-
-        val adapter = MyAdapter(list)
-        rvM.adapter = adapter
-
-        adapter.setExpanded(false)
+        for (i in 0..9) {
+            list.add(Parent(i, "Parent $i"))
+        }
+        rvM.adapter = MyAdapter(list).apply {
+            setExpanded(false)
+        }
     }
 }

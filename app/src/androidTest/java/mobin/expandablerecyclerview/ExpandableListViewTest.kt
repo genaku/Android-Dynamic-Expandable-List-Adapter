@@ -20,7 +20,6 @@ import kotlin.random.Random
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
-
 class ExpandableListViewTest {
 
     @Rule
@@ -41,7 +40,6 @@ class ExpandableListViewTest {
                 click()
             )
         )
-
     }
 
     /**
@@ -52,7 +50,6 @@ class ExpandableListViewTest {
     @Test
     fun testExpandedListClick() {
         val randomIndex = Random.nextInt(10)
-
 
         onView(withId(R.id.rvM)).perform(
             RecyclerViewActions.actionOnItemAtPosition<MyAdapter.ParentViewHolder>(
@@ -67,7 +64,6 @@ class ExpandableListViewTest {
                 clickActionOnChildRecyclerView(randomIndex)
             )
         )
-
     }
 
     /**
@@ -94,6 +90,4 @@ class ExpandableListViewTest {
         onView(withId(R.id.rvM))
             .check(matches(atChildPosition(randomIndex, withText("Child $randomIndex"))))
     }
-
-
 }

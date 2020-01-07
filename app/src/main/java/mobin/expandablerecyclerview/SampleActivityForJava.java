@@ -20,7 +20,7 @@ public class SampleActivityForJava extends AppCompatActivity {
         ArrayList<Parent> list = new ArrayList<>(10);
 
         for (int i = 0; i < 10; i++)
-            list.add(new Parent("Parent " + i));
+            list.add(new Parent(i, "Parent " + i));
 
         final MyAdapter myAdapter = new MyAdapter(list);
 

@@ -90,25 +90,27 @@ abstract class ExpandableRecyclerViewAdapter<
             onCreateParentView(parent, viewType)
 
     private fun onCreateParentView(parent: ViewGroup, viewType: Int): PVH {
-        val pvh = onCreateParentViewHolder(parent, viewType)
+        val parentViewHolder = onCreateParentViewHolder(parent, viewType)
 
-        initializeChildRecyclerView(pvh.containerView.getRecyclerView())
+        initializeChildRecyclerView(parentViewHolder.containerView.getRecyclerView())
 
-        pvh.containerView.setOnClickListener {
-            val position = pvh.adapterPosition
+        parentViewHolder.containerView.setOnClickListener {
+            val position = parentViewHolder.adapterPosition
             val expandable = expandableList[position]
 
-            if (isSingleExpanded())
+            if (isSingleExpanded()) {
                 handleSingleExpansion(position)
-            else handleExpansion(expandable, position)
+            } else {
+                handleExpansion(expandable, position)
+            }
 
             handleLastPositionScroll(position)
 
-            onExpandableClick(pvh, expandable)
+            onExpandableClick(parentViewHolder, expandable)
 
             Log.d(TAG, "Clicked @ $position")
         }
-        return pvh
+        return parentViewHolder
     }
 
     private fun collapseAllGroups() {
@@ -159,14 +161,15 @@ abstract class ExpandableRecyclerViewAdapter<
     }
 
     private fun setupChildRecyclerView(holder: PVH, position: Int) {
+        Log.d(TAG, "setupChildRecyclerView pos $position")
         val expandableGroup = expandableList[position]
+
         val childListAdapter = ChildListAdapter(expandableGroup, holder) { viewGroup, viewType ->
             onCreateChildViewHolder(viewGroup, viewType)
         }
-        val childRecyclerView = holder.containerView.getRecyclerView()
 
-        if (childRecyclerView?.adapter == null)
-            childRecyclerView?.adapter = childListAdapter
+        val childRecyclerView = holder.containerView.getRecyclerView()
+        childRecyclerView?.adapter = childListAdapter
 
         clickEvent(expandableGroup, holder.containerView)
 
